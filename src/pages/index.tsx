@@ -3,37 +3,44 @@ import Formulario from "../components/Formulario";
 import Layout from "../components/Layout";
 import Tabela from "../components/Tabela";
 import Cliente from "../core/Cliente";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ColecaoCliente from "../backend/db/ColecaoCliente";
+import ClienteRepositorio from "../core/ClienteRepositorio";
 
 export default function Home() {
+  //firebase
+  const repo: ClienteRepositorio = new ColecaoCliente();
+
   //Estados
   const [cliente, setCliente] = useState<Cliente>(Cliente.vazio());
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [visivel, setVisivel] = useState<"tabela" | "form">("tabela");
 
-  const clientes = [
-    new Cliente("Ana", 34, "1"),
-    new Cliente("Bia", 45, "2"),
-    new Cliente("Jose", 22, "3"),
-    new Cliente("Joao", 44, "4"),
-    new Cliente("Pedro", 12, "5"),
-  ];
+  useEffect(obterTodos, []);
 
+  function obterTodos() {
+    repo.obterTodos().then((clientes) => {
+      setClientes(clientes);
+      setVisivel("tabela");
+    });
+  }
   function clienteSelecionado(cliente: Cliente) {
     setCliente(cliente);
     setVisivel("form");
   }
-  function clienteExcluido(cliente: Cliente) {
-    console.log(cliente.nome);
+  async function clienteExcluido(cliente: Cliente) {
+    await repo.excluir(cliente);
+    obterTodos();
   }
 
-  function salvarCliente(cliente: Cliente) {
-    console.log(cliente);
-    setVisivel("tabela");
+  async function salvarCliente(cliente: Cliente) {
+    await repo.salvar(cliente);
+    obterTodos();
   }
 
   function novoCliente(cliente: Cliente) {
     setCliente(Cliente.vazio());
-    setVisivel("tabela");
+    setVisivel("form");
   }
 
   return (
@@ -48,7 +55,7 @@ export default function Home() {
         {visivel === "tabela" ? (
           <>
             <div className="flex justify-end">
-              <Botao cor="green" className="mb-4" onClick={() => novoCliente}>
+              <Botao cor="green" className="mb-4" onClick={() => novoCliente()}>
                 Novo Cliente
               </Botao>
             </div>
